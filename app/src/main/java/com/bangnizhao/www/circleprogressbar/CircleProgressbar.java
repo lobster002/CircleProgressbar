@@ -29,7 +29,7 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
     private volatile String centerText = "";
     private SurfaceHolder holder;
 
-    private float angle;
+    private volatile float angle;
 
     private int textColor = Color.parseColor("#666666"); //说实话 这个颜色很难看
     private int bgColor = Color.parseColor("#f2f2f2");
@@ -177,8 +177,8 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
         int num = (int) ((360 - angle) / 6 + 0.5f);
         String text = String.valueOf(num);
         if (angle >= 330) {//此时要求圆点有变小的渐变
-            float scale = DOT_SIZE - ((angle - 330.0f) / 5);
-            canvas.drawCircle(x, y, dip2px(scale), circlePaint);
+            float scale = DOT_SIZE - dip2px((angle - 330.0f) / 5);
+            canvas.drawCircle(x, y, scale, circlePaint);
         } else {
             canvas.drawCircle(x, y, DOT_SIZE, circlePaint);
         }
