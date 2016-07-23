@@ -18,7 +18,7 @@
         android:layout_height="50dp"
         android:layout_alignParentTop="true"
         android:background="#FFFFFF"
-        android:hint="我是输入框，进度为 0 - 3600"
+        android:hint="我是输入框，进度为 0 - 30000"
         android:inputType="number"
         android:textSize="18sp"/>
 

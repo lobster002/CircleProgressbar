@@ -36,7 +36,7 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
     private int white = Color.parseColor("#FFFFFF");
 
     /*
-    * 一分钟  就是 60 * 1000 毫秒转一圈  根据系统时间差值 计算旋转角度
+    * 半分钟分钟  就是 30 * 1000 毫秒转一圈  根据系统时间差值 计算旋转角度
     * */
     private volatile long theStartTime;
     private volatile long startTime;
@@ -44,9 +44,9 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
 
     private Object lock = new Object();//所有涉及到时间的地方 必须加此锁  不如频繁设置进度 会出现死锁
 
-    private int DEFAULT_TEXT_SIZE = (int) sp2px(40);//默认中间的文字大小
-    private int DOT_SIZE = (int) dip2px(8);//默认圆点大小
-    private int MAX_VALUE = 60 * 60; //进度设置最大值  设置之后根据设置值 与最大值的比较  计算偏转角度
+    private int CENTER_TEXT_SIZE = (int) sp2px(40);//默认中间的文字大小
+    private int DOT_SIZE = (int) dip2px(10);//默认圆点大小
+    private int MAX_VALUE = 30 * 1000; //进度设置最大值  设置之后根据设置值 与最大值的比较  计算偏转角度
 
 
     private Thread mDrawThread;//工作线程  切记不要在此线程内更新其他UI界面
@@ -115,7 +115,7 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
             textPaint = new Paint();
             textPaint.setColor(textColor);
             textPaint.setAntiAlias(true);
-            textPaint.setTextSize(DEFAULT_TEXT_SIZE);
+            textPaint.setTextSize(CENTER_TEXT_SIZE);
         }
 
         if (null == dotTextPaint) {
@@ -152,21 +152,21 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void drawCircle(Canvas canvas) {
-        long deltaTime = (startTime - theStartTime);
+        long deltaTime = (startTime - theStartTime);//0 -- 30000 之间
         RectF oval = new RectF(halfWidthSize - circleRadius, halfHeightSize - circleRadius, halfWidthSize + circleRadius, halfHeightSize + circleRadius);
-        angle = (float) (deltaTime * 0.006);//偏转角度
+        angle = (float) (deltaTime * 0.012);//偏转角度
         circlePaint.setStyle(Paint.Style.STROKE);
-        float fraction = angle / 360.f;
         canvas.drawCircle(halfWidthSize, halfHeightSize, circleRadius, bgPaint);
-        circlePaint.setColor(evaluate(fraction, Color.GREEN, Color.RED));
+        float fraction = angle / 360.f;
+        circlePaint.setColor(getVariableColor(fraction));
         canvas.drawArc(oval, -90, angle, false, circlePaint);
     }
 
     private void drawDot(Canvas canvas) {
-        if (angle < 180.0f) {//30秒之前  即偏转180度之前 直接返回
+        if (angle < 300.0f) {//5秒之前  即偏转300度之前 不必画圆点
             return;
         }
-        int radius = (int) ((int) insideCircleRadius + dip2px(5));
+        int radius = (int) (insideCircleRadius + dip2px(5));
         float deltaY = (float) (radius * Math.sin(Math.toRadians(angle + 90)));
         float deltaX = (float) (radius * Math.cos(Math.toRadians(angle + 90)));
         float x = halfWidthSize - deltaX;
@@ -174,10 +174,10 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
 
         circlePaint.setStyle(Paint.Style.FILL);
 
-        int num = (int) ((360 - angle) / 6 + 0.5f);
+        int num = (int) ((360 - angle) / 12 + 1);
         String text = String.valueOf(num);
-        if (angle >= 330) {//此时要求圆点有变小的渐变
-            float scale = DOT_SIZE - dip2px((angle - 330.0f) / 5);
+        if (angle >= 348) {//此时要求圆点有变小的渐变
+            float scale = DOT_SIZE - dip2px((angle - 348.0f) / 2);
             canvas.drawCircle(x, y, scale, circlePaint);
         } else {
             canvas.drawCircle(x, y, DOT_SIZE, circlePaint);
@@ -209,9 +209,7 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
 
         synchronized (lock) {
             startTime = System.currentTimeMillis();
-            theStartTime = startTime;
-            long defaultVaule = value * 60 * 1000 / MAX_VALUE;
-            theStartTime -= defaultVaule;
+            theStartTime = startTime - value;
         }
     }
 
@@ -260,7 +258,7 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
                 synchronized (lock) {
                     startTime = System.currentTimeMillis();
                 }
-                if ((startTime - theStartTime) >= 60 * 1000) {
+                if ((startTime - theStartTime) >= 30 * 1000) {
                     theStartTime = startTime;
                     if (null != listener) {
                         listener.onCircleComplete(angle);
@@ -280,11 +278,21 @@ public class CircleProgressbar extends SurfaceView implements SurfaceHolder.Call
 
     /*
     * 圆满一圈是的回调接口
-    * 不要在里边更新UI  切记
+    * 不要在里边更新其他UI  切记
+    * 不然不会Crash  但是界面更新会出现异常
     * */
     public void setDrawCircleListener(DrawCircleListener listener) {
         this.listener = listener;
     }
+
+    private int getVariableColor(float currentValue) {
+        if (currentValue <= 0.5f) {
+            return evaluate(currentValue * 2, Color.GREEN, Color.YELLOW);
+        }
+
+        return evaluate((currentValue - 0.5f) * 2, Color.YELLOW, Color.RED);
+    }
+
 
     /**
      * 颜色渐变的方法  有问题你们自己去改

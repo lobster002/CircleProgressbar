@@ -55,7 +55,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     public void onClick(View v) {
         String str = mEditText.getText().toString().trim();
         if (TextUtils.isEmpty(str)) {
-            Toast.makeText(MainActivity.this, "在输入框内输入进度值 0 - 3600", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "在输入框内输入进度值 0 - 30000", Toast.LENGTH_SHORT).show();
             return;
         }
         mProgressbar.setCurrentValue(Integer.valueOf(str));
